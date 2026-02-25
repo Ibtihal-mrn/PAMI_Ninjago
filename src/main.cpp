@@ -10,6 +10,7 @@
 #include "../lib/life.h"
 #include "../lib/safety.h"
 #include "../lib/robot.h"
+#include "../lib/startSwitch.h"
 
 // ===== tes constantes =====
 const unsigned long DUREE_VIE_MS = 100000;
@@ -21,6 +22,7 @@ const int SERVO_POS_FIN  = 90;
 const int TRIG_PIN = 6;
 const int ECHO_PIN = 7;
 const float DISTANCE_SEUIL = 10.0;
+const int PIN_START = 4; 
 
 const int PIN_URGENCE = 8;
 
@@ -38,17 +40,15 @@ const int PIN_URGENCE = 8;
 
 // ===== objets =====
 Adafruit_MotorShield AFMS;
-
 Motors motors(AFMS, 1, 2);
 Encoders encoders(2, 3);
 Ultrasonic us(TRIG_PIN, ECHO_PIN, DISTANCE_SEUIL);
 EmergencyButton btn(PIN_URGENCE);
-
 Servo servoFin;
 Life life(DUREE_VIE_MS, servoFin, SERVO_POS_INIT, SERVO_POS_FIN);
-
 Safety safety(us, btn, life, motors);
 Robot robot(motors, encoders, safety);
+StartSwitch startSwitch(PIN_START);
 
 void setup() {
   Serial.begin(9600);
@@ -56,6 +56,10 @@ void setup() {
 
   Serial.println("=== PAMI - REGULATION VITESSE (PI) + ARRET URGENCE ===");
 
+  // ===== TIRETTE =====
+  startSwitch.begin();
+  startSwitch.waitForStart();
+  
   if (!motors.begin()) {
     Serial.println("❌ ERREUR SHIELD");
     while (1) {}
