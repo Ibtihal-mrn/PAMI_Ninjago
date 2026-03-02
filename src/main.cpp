@@ -123,21 +123,40 @@ void loop() {
   // Serial.println("✅ FIN SEQUENCE");
   // while (1) {}
 
-  if (team == Team::A) {<
+  if (team == Team::A) {
     Serial.println("=== SEQUENCE EQUIPE A ===");
-    robot.avancer_cm(50);
+    robot.avancer_cm(5);
     delay(1000);
     robot.tourner_gauche_deg(90);
+    delay(1000);
+    robot.avancer_cm(15);
+    delay(1000);
+    robot.tourner_gauche_deg(180);
+    delay(1000);
+    robot.avancer_cm(5);
+    delay(1000);
+    robot.tourner_gauche_deg(90);
+    delay(1000);
+    robot.avancer_cm(15);
     delay(1000);
   } 
   
   else {
     Serial.println("=== SEQUENCE EQUIPE B ===");
-    robot.avancer_cm(50);
+    robot.avancer_cm(5);
     delay(1000);
-    robot.tourner_gauche_deg(90);
+    robot.tourner_gauche_deg(-90);
     delay(1000);
-}
+    robot.avancer_cm(15);
+    delay(1000);
+    robot.tourner_gauche_deg(-180);
+    delay(1000);
+    robot.avancer_cm(5);
+    delay(1000);
+    robot.tourner_gauche_deg(-90);
+    delay(1000);
+    robot.avancer_cm(15);
+    delay(1000);
 }
 
 
