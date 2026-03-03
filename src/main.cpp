@@ -87,76 +87,82 @@ void setup() {
 }
 
 void loop() {
-  // Serial.println("➡️ Avance 5 cm");
-  // robot.avancer_ticks(TICKS_5CM);
-
-  // Serial.println("↪️ Rotation 90° gauche");
-  // robot.tourner_gauche_ticks(TICKS_90DEG);
-
-  // Serial.println("➡️ Avance 15 cm");
-  // robot.avancer_ticks(TICKS_15CM);
-
-  // Serial.println("🔁 Rotation 180° (retour)");
-  // robot.tourner_gauche_ticks(TICKS_180DEG);
-
-  // Serial.println("➡️ Avance 5 cm");
-  // robot.avancer_ticks(50);
-
-  // Serial.println("↪️ Rotation 90° gauche");
-  // robot.tourner_gauche_ticks(TICKS_90DEG);
-
-  // Serial.println("➡️ Avance 15 cm");
-  // robot.avancer_ticks(130);
-
-  // Serial.println("↪️ Rotation 90° gauche");
-  // robot.tourner_gauche_ticks(TICKS_90DEG);
-
-  // Serial.println("➡️ Avance 5 cm");
-  // robot.avancer_ticks(TICKS_5CM + 10);
-
-  // Serial.println("↪️ Rotation 90° gauche");
-  // robot.tourner_gauche_ticks(TICKS_90DEG + 2);
-
-  // Serial.println("➡️ Avance 15 cm");
-  // robot.avancer_ticks(170);
-
-  // Serial.println("✅ FIN SEQUENCE");
-  // while (1) {}
 
   if (team == Team::A) {
     Serial.println("=== SEQUENCE EQUIPE A ===");
-    robot.avancer_cm(5);
-    delay(1000);
-    robot.tourner_gauche_deg(90);
-    delay(1000);
-    robot.avancer_cm(15);
-    delay(1000);
-    robot.tourner_gauche_deg(180);
-    delay(1000);
-    robot.avancer_cm(5);
-    delay(1000);
-    robot.tourner_gauche_deg(90);
-    delay(1000);
-    robot.avancer_cm(15);
-    delay(1000);
-  } 
-  
-  else {
-    Serial.println("=== SEQUENCE EQUIPE B ===");
-    robot.avancer_cm(5);
-    delay(1000);
-    robot.tourner_gauche_deg(-90);
-    delay(1000);
-    robot.avancer_cm(15);
-    delay(1000);
-    robot.tourner_gauche_deg(-180);
-    delay(1000);
-    robot.avancer_cm(5);
-    delay(1000);
-    robot.tourner_gauche_deg(-90);
-    delay(1000);
-    robot.avancer_cm(15);
-    delay(1000);
-}
+  } else {
+    Serial.println("➡️ Avance 5 cm");
+    robot.avancer_ticks(TICKS_5CM);
 
+    Serial.println("↪️ Rotation 90° gauche");
+    robot.tourner_gauche_ticks(TICKS_90DEG);
+
+    Serial.println("➡️ Avance 15 cm");
+    robot.avancer_ticks(TICKS_15CM);
+
+    Serial.println("🔁 Rotation 180° (retour)");
+    robot.tourner_gauche_ticks(TICKS_180DEG);
+
+    Serial.println("➡️ Avance 5 cm");
+    robot.avancer_ticks(50);
+
+    Serial.println("↪️ Rotation 90° gauche");
+    robot.tourner_gauche_ticks(TICKS_90DEG);
+
+    Serial.println("➡️ Avance 15 cm");
+    robot.avancer_ticks(130);
+
+    Serial.println("↪️ Rotation 90° gauche");
+    robot.tourner_gauche_ticks(TICKS_90DEG);
+
+    Serial.println("➡️ Avance 5 cm");
+    robot.avancer_ticks(TICKS_5CM + 10);
+
+    Serial.println("↪️ Rotation 90° gauche");
+    robot.tourner_gauche_ticks(TICKS_90DEG + 2);
+
+    Serial.println("➡️ Avance 15 cm");
+    robot.avancer_ticks(170);
+
+    Serial.println("✅ FIN SEQUENCE");
+    while (1) {}
+  }
+  
+
+  // if (team == Team::A) {
+  //   Serial.println("=== SEQUENCE EQUIPE A ===");
+  //   robot.avancer_cm(5);
+  //   delay(1000);
+  //   robot.tourner_gauche_deg(90);
+  //   delay(1000);
+  //   robot.avancer_cm(15);
+  //   delay(1000);
+  //   robot.tourner_gauche_deg(180);
+  //   delay(1000);
+  //   robot.avancer_cm(5);
+  //   delay(1000);
+  //   robot.tourner_gauche_deg(90);
+  //   delay(1000);
+  //   robot.avancer_cm(15);
+  //   delay(1000);
+  // } 
+  
+  // else {
+  //   Serial.println("=== SEQUENCE EQUIPE B ===");
+  //   robot.avancer_cm(5);
+  //   delay(1000);
+  //   robot.tourner_gauche_deg(-90);
+  //   delay(1000);
+  //   robot.avancer_cm(15);
+  //   delay(1000);
+  //   robot.tourner_gauche_deg(-180);
+  //   delay(1000);
+  //   robot.avancer_cm(5);
+  //   delay(1000);
+  //   robot.tourner_gauche_deg(-90);
+  //   delay(1000);
+  //   robot.avancer_cm(15);
+  //   delay(1000);
+  // }
+}
 
