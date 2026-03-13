@@ -13,8 +13,8 @@ public:
   bool check();
 
 private:
-  Ultrasonic& _us;
-  EmergencyButton& _btn;
+  // Ultrasonic& _us;
+  // EmergencyButton& _btn;
   Life& _life;
   Motors& _motors;
 

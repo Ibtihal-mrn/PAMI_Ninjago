@@ -90,7 +90,47 @@ void loop() {
 
   if (team == Team::A) {
     Serial.println("=== SEQUENCE EQUIPE A ===");
-  } else {
+    Serial.println("➡️ Avance 5 cm");
+    robot.avancer_ticks(TICKS_5CM);
+
+    Serial.println("↪️ Rotation 90° gauche");
+    robot.tourner_gauche_ticks(TICKS_90DEG);
+
+    Serial.println("➡️ Avance 15 cm");
+    robot.avancer_ticks(TICKS_15CM);
+
+    Serial.println("🔁 Rotation 180° (retour)");
+    robot.tourner_gauche_ticks(TICKS_180DEG);
+
+    Serial.println("➡️ Avance 5 cm");
+    robot.avancer_ticks(50);
+
+    Serial.println("↪️ Rotation 90° gauche");
+    robot.tourner_gauche_ticks(TICKS_90DEG);
+
+    Serial.println("➡️ Avance 15 cm");
+    robot.avancer_ticks(130);
+
+    Serial.println("↪️ Rotation 90° gauche");
+    robot.tourner_gauche_ticks(TICKS_90DEG);
+
+    Serial.println("➡️ Avance 5 cm");
+    robot.avancer_ticks(TICKS_5CM + 10);
+
+    Serial.println("↪️ Rotation 90° gauche");
+    robot.tourner_gauche_ticks(TICKS_90DEG + 2);
+
+    Serial.println("➡️ Avance 15 cm");
+    robot.avancer_ticks(170);
+
+    Serial.println("✅ FIN SEQUENCE");
+    while (1) {}
+  } 
+  
+  else {
+
+    Serial.println("=== SEQUENCE EQUIPE B ===");
+
     Serial.println("➡️ Avance 5 cm");
     robot.avancer_ticks(TICKS_5CM);
 
