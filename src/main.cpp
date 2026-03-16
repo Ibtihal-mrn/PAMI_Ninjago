@@ -17,43 +17,49 @@
 const unsigned long DUREE_VIE_MS = 100000;
 const int PIN_SERVO = 9;
 const int SERVO_POS_INIT = 0;
-const int SERVO_POS_FIN  = 90;
-const int TRIG_PIN = 6;
-const int ECHO_PIN = 7;                 
+const int SERVO_POS_FIN = 90;
+const int TRIG_PIN_1 = 6;
+const int ECHO_PIN_1 = 7;
+const int TRIG_PIN_2 = 10;
+const int ECHO_PIN_2 = 11;
 const float DISTANCE_SEUIL = 10.0;
-const int PIN_START = 4; 
+const int PIN_START = 4;
 const int PIN_TEAM = 5;
 const int PIN_URGENCE = 8;
 
 // mouvements
-#define TICKS_5CM     30
-#define TICKS_15CM    54
-#define TICKS_90DEG   16
-#define TICKS_180DEG  34
+#define TICKS_5CM 30
+#define TICKS_15CM 54
+#define TICKS_90DEG 16
+#define TICKS_180DEG 34
 
 // PID (gardé)
-#define BASE_SPEED  70
-#define KP          1.0
-#define KI          0.03
-#define MAX_CORR    12
+#define BASE_SPEED 70
+#define KP 1.0
+#define KI 0.03
+#define MAX_CORR 12
 
 // ===== objets =====
 Adafruit_MotorShield AFMS;
 Motors motors(AFMS, 1, 2);
 Encoders encoders(2, 3);
-Ultrasonic us(TRIG_PIN, ECHO_PIN, DISTANCE_SEUIL);
+Ultrasonic us1(TRIG_PIN_1, ECHO_PIN_1, DISTANCE_SEUIL);
+Ultrasonic us2(TRIG_PIN_2, ECHO_PIN_2, DISTANCE_SEUIL);
 EmergencyButton btn(PIN_URGENCE);
 Servo servoFin;
 Life life(DUREE_VIE_MS, servoFin, SERVO_POS_INIT, SERVO_POS_FIN);
-Safety safety(us, btn, life, motors);
+Safety safety(us1, us2, btn, life, motors);
 Robot robot(motors, encoders, safety);
 StartSwitch startSwitch(PIN_START);
 TeamSwitch teamSwitch(PIN_TEAM);
 Team team = Team::A; // valeur par défaut, sera mise à jour dans setup()
 
-void setup() {
+void setup()
+{
   Serial.begin(9600);
-  while (!Serial) {}
+  while (!Serial)
+  {
+  }
 
   Serial.println("=== PAMI - REGULATION VITESSE (PI) + ARRET URGENCE ===");
 
@@ -64,19 +70,26 @@ void setup() {
   // ===== TEAM SWITCH =====
   teamSwitch.begin();
   team = teamSwitch.readTeam();
-  if (team == Team::A) {
+  if (team == Team::A)
+  {
     Serial.println("Equipe A sélectionnée");
-  } else {
+  }
+  else
+  {
     Serial.println("Equipe B sélectionnée");
   }
 
-  if (!motors.begin()) {
+  if (!motors.begin())
+  {
     Serial.println("❌ ERREUR SHIELD");
-    while (1) {}
+    while (1)
+    {
+    }
   }
 
   encoders.begin();
-  us.begin();
+  us1.begin();
+  us2.begin();
   btn.begin();
 
   servoFin.attach(PIN_SERVO);
@@ -86,9 +99,11 @@ void setup() {
   delay(3000);
 }
 
-void loop() {
+void loop()
+{
 
-  if (team == Team::A) {
+  if (team == Team::A)
+  {
     Serial.println("=== SEQUENCE EQUIPE A ===");
     Serial.println("➡️ Avance 5 cm");
     robot.avancer_ticks(TICKS_5CM);
@@ -124,10 +139,13 @@ void loop() {
     robot.avancer_ticks(170);
 
     Serial.println("✅ FIN SEQUENCE");
-    while (1) {}
-  } 
-  
-  else {
+    while (1)
+    {
+    }
+  }
+
+  else
+  {
 
     Serial.println("=== SEQUENCE EQUIPE B ===");
 
@@ -165,10 +183,8 @@ void loop() {
     robot.avancer_ticks(170);
 
     Serial.println("✅ FIN SEQUENCE");
-    while (1) {}
+    while (1)
+    {
+    }
   }
-  
-
-  
 }
-

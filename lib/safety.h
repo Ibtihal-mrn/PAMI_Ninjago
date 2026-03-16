@@ -5,18 +5,20 @@
 #include "life.h"
 #include "motors.h"
 
-class Safety {
+class Safety
+{
 public:
-  Safety(Ultrasonic& us, EmergencyButton& btn, Life& life, Motors& motors);
+  Safety(Ultrasonic &us1, Ultrasonic &us2, EmergencyButton &btn, Life &life, Motors &motors);
 
   // return true => stop immédiat (urgence ou fin de vie)
   bool check();
 
 private:
-  Ultrasonic& _us;
-  EmergencyButton& _btn;
-  Life& _life;
-  Motors& _motors;
+  Ultrasonic &_us1;
+  Ultrasonic &_us2;
+  EmergencyButton &_btn;
+  Life &_life;
+  Motors &_motors;
 
   bool _obstaclePresent = false;
 };
