@@ -1,11 +1,13 @@
 #include "../lib/ultrasonic.h"
 
-Ultrasonic::Ultrasonic(uint8_t trig, uint8_t echo, float seuilCm)
-: _trig(trig), _echo(echo), _seuil(seuilCm) {}
+Ultrasonic::Ultrasonic(uint8_t trig, uint8_t echo, uint8_t trig1, uint8_t echo1, float seuilCm)
+: _trig(trig), _echo(echo), _trig1(trig1), _echo1(echo1), _seuil(seuilCm) {}
 
 void Ultrasonic::begin() {
   pinMode(_trig, OUTPUT);
   pinMode(_echo, INPUT);
+  pinMode(_trig1, OUTPUT);
+  pinMode(_echo1, INPUT);
 }
 
 float Ultrasonic::mesurerDistance() {
