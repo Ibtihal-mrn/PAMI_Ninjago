@@ -12,9 +12,10 @@
 #include "../lib/robot.h"
 #include "../lib/startSwitch.h"
 #include "../lib/teamSwitch.h"
+#include "../lib/fsm.h"
 
 // ===== tes constantes =====
-const unsigned long DUREE_VIE_MS = 100000;
+const unsigned long DUREE_VIE_MS = 90000;
 const int PIN_SERVO = 9;
 const int SERVO_POS_INIT = 0;
 const int SERVO_POS_FIN = 90;
@@ -27,17 +28,7 @@ const int PIN_START = 4;
 const int PIN_TEAM = 5;
 const int PIN_URGENCE = 8;
 
-// mouvements
-#define TICKS_5CM 30
-#define TICKS_15CM 54
-#define TICKS_90DEG 16
-#define TICKS_180DEG 34
-
-// PID (gardé)
-#define BASE_SPEED 70
-#define KP 1.0
-#define KI 0.03
-#define MAX_CORR 12
+// PID : les constantes réelles sont dans robot.cpp (les #define ici n'y sont pas visibles)
 
 // ===== objets =====
 Adafruit_MotorShield AFMS;
@@ -52,6 +43,7 @@ Safety safety(us1, us2, btn, life, motors);
 Robot robot(motors, encoders, safety);
 StartSwitch startSwitch(PIN_START);
 TeamSwitch teamSwitch(PIN_TEAM);
+Fsm fsm(robot);
 Team team = Team::A; // valeur par défaut, sera mise à jour dans setup()
 
 void setup()
@@ -96,93 +88,17 @@ void setup()
   servoFin.write(SERVO_POS_INIT);
   life.begin();
 
+  fsm.begin(team);
+
   delay(3000);
 }
 
 void loop()
 {
+  fsm.update();
 
-  if (team == Team::A)
+  if (fsm.isFinished())
   {
-    Serial.println("=== SEQUENCE EQUIPE A ===");
-    Serial.println("➡️ Avance 5 cm");
-    robot.avancer_ticks(TICKS_5CM);
-
-    Serial.println("↪️ Rotation 90° gauche");
-    robot.tourner_gauche_ticks(TICKS_90DEG);
-
-    Serial.println("➡️ Avance 15 cm");
-    robot.avancer_ticks(TICKS_15CM);
-
-    Serial.println("🔁 Rotation 180° (retour)");
-    robot.tourner_gauche_ticks(TICKS_180DEG);
-
-    Serial.println("➡️ Avance 5 cm");
-    robot.avancer_ticks(50);
-
-    Serial.println("↪️ Rotation 90° gauche");
-    robot.tourner_gauche_ticks(TICKS_90DEG);
-
-    Serial.println("➡️ Avance 15 cm");
-    robot.avancer_ticks(130);
-
-    Serial.println("↪️ Rotation 90° gauche");
-    robot.tourner_gauche_ticks(TICKS_90DEG);
-
-    Serial.println("➡️ Avance 5 cm");
-    robot.avancer_ticks(TICKS_5CM + 10);
-
-    Serial.println("↪️ Rotation 90° gauche");
-    robot.tourner_gauche_ticks(TICKS_90DEG + 2);
-
-    Serial.println("➡️ Avance 15 cm");
-    robot.avancer_ticks(170);
-
-    Serial.println("✅ FIN SEQUENCE");
-    while (1)
-    {
-    }
-  }
-
-  else
-  {
-
-    Serial.println("=== SEQUENCE EQUIPE B ===");
-
-    Serial.println("➡️ Avance 5 cm");
-    robot.avancer_ticks(TICKS_5CM);
-
-    Serial.println("↪️ Rotation 90° gauche");
-    robot.tourner_gauche_ticks(TICKS_90DEG);
-
-    Serial.println("➡️ Avance 15 cm");
-    robot.avancer_ticks(TICKS_15CM);
-
-    Serial.println("🔁 Rotation 180° (retour)");
-    robot.tourner_gauche_ticks(TICKS_180DEG);
-
-    Serial.println("➡️ Avance 5 cm");
-    robot.avancer_ticks(50);
-
-    Serial.println("↪️ Rotation 90° gauche");
-    robot.tourner_gauche_ticks(TICKS_90DEG);
-
-    Serial.println("➡️ Avance 15 cm");
-    robot.avancer_ticks(130);
-
-    Serial.println("↪️ Rotation 90° gauche");
-    robot.tourner_gauche_ticks(TICKS_90DEG);
-
-    Serial.println("➡️ Avance 5 cm");
-    robot.avancer_ticks(TICKS_5CM + 10);
-
-    Serial.println("↪️ Rotation 90° gauche");
-    robot.tourner_gauche_ticks(TICKS_90DEG + 2);
-
-    Serial.println("➡️ Avance 15 cm");
-    robot.avancer_ticks(170);
-
-    Serial.println("✅ FIN SEQUENCE");
     while (1)
     {
     }
