@@ -1,0 +1,17 @@
+# PAMI Ninja 
+
+## Schéma de câblage 
+
+Voici le schéma de câblage réalisé pour le **PAMI Ninja** : 
+
+![schéma de câblage](images/schema_cablage.png)
+
+Les composants sont les suivants : 
+
+- 4 ultrasons **HC-SRO4**
+- Un servomoteur **SG90**
+- Un switch 
+- Une alimentation de 9V
+- Un bouton d'arrêt d'urgence **A01ES-DM**
+- Une tirette de démarrage 
+- 2 encodeurs **SENS-H206**
