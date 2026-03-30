@@ -1,11 +1,14 @@
+#include <Arduino.h>
 #include "../lib/emergencyButton.h"
 
-EmergencyButton::EmergencyButton(uint8_t pin) : _pin(pin) {}
+#define EBTN_PIN 8
 
-void EmergencyButton::begin() {
-  pinMode(_pin, INPUT_PULLUP);
+void emergencyButton_init()
+{
+    pinMode(EBTN_PIN, INPUT_PULLUP);
 }
 
-bool EmergencyButton::urgenceActive() {
-  return digitalRead(_pin) == HIGH; // == ton code
+bool emergencyButton_isPressed()
+{
+    return digitalRead(EBTN_PIN) == EMERGENCY_ACTIVE_LEVEL;
 }

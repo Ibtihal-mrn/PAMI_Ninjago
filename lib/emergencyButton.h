@@ -1,13 +1,14 @@
-#pragma once
+#ifndef EMERGENCYBUTTON_H
+#define EMERGENCYBUTTON_H
+
 #include <Arduino.h>
 
-class EmergencyButton {
-public:
-  explicit EmergencyButton(uint8_t pin);
+// Adapter selon le cablage:
+// - HIGH: urgence active quand la broche lit HIGH
+// - LOW : urgence active quand la broche lit LOW
+#define EMERGENCY_ACTIVE_LEVEL HIGH
 
-  void begin();
-  bool urgenceActive(); // garde ta logique (HIGH => appuyé)
+void emergencyButton_init();
+bool emergencyButton_isPressed();  // exactement ce nom
 
-private:
-  uint8_t _pin;
-};
+#endif

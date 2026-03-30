@@ -1,17 +1,15 @@
-#pragma once
+#ifndef ULTRASONIC_H
+#define ULTRASONIC_H
+
 #include <Arduino.h>
 
-class Ultrasonic
-{
-public:
-  Ultrasonic(uint8_t trig, uint8_t echo, float seuilCm);
+// Initialisation du capteur
+void ultrasonic_init(int trigPin, int echoPin);
 
-  void begin();
-  float mesurerDistance();
+// Lecture de la distance en cm
+int ultrasonic_readDistance();
 
-  float seuil() const { return _seuil; }
+// Test si obstacle sous un seuil
+bool ultrasonic_isObstacle(int distance, int threshold);
 
-private:
-  uint8_t _trig, _echo;
-  float _seuil;
-};
+#endif

@@ -1,21 +1,32 @@
-#pragma once
+#ifndef MOTORS_H
+#define MOTORS_H
+
 #include <Arduino.h>
+#include <Wire.h>
 #include <Adafruit_MotorShield.h>
 
-class Motors {
-public:
-  Motors(Adafruit_MotorShield& shield, uint8_t portD, uint8_t portG);
+// ---------- MOTEURS ADATRUFS ----------
+extern Adafruit_MotorShield AFMS;
+extern Adafruit_DCMotor *motorL;
+extern Adafruit_DCMotor *motorR;
 
-  bool begin(); // appelle shield.begin()
-  void stop();
+// inverser si nécessaire
+extern bool invertLeft;
+extern bool invertRight;
 
-  void runForward();      // chez toi: avancer = BACKWARD
-  void runTurnLeft();     // D FORWARD, G BACKWARD
+// ---------- PARAMETRES ----------
+extern int baseSpeed;  // vitesse de base
+extern float Kp;       // gain correction trajectoire
 
-  void setSpeed(int speedD, int speedG);
+extern int trimL;
+extern int trimR;
 
-private:
-  Adafruit_MotorShield& _shield;
-  Adafruit_DCMotor* _motorD;
-  Adafruit_DCMotor* _motorG;
-};
+void motors_init(void);
+void motors_applySpeeds(int speedL, int speedR);
+void motors_forward(int speedL, int speedR);
+void motors_backward(int speedL, int speedR);
+void motors_stop();
+void motors_rotateRight(int speed);
+void motors_rotateLeft(int speed);
+
+#endif

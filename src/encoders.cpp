@@ -1,46 +1,69 @@
 #include "../lib/encoders.h"
 
-Encoders* Encoders::_self = nullptr;
+volatile long ticksL = 0;
+volatile long ticksR = 0;
 
-Encoders::Encoders(uint8_t pinG, uint8_t pinD) : _pinG(pinG), _pinD(pinD) {}
+// Filtre anti-glitch logiciel: ignore les fronts trop rapproches.
+// Pour encodeur simple, garder une valeur faible pour ne pas rater des impulsions.
+// 1200us reste compatible avec une vitesse de roue elevee tout en filtrant
+// les parasites de rebranchement de cable.
+static const unsigned long ENC_MIN_PULSE_US = 1200;
+volatile unsigned long lastEdgeUsL = 0;
+volatile unsigned long lastEdgeUsR = 0;
 
-void Encoders::begin() {
-  pinMode(_pinG, INPUT_PULLUP);
-  pinMode(_pinD, INPUT_PULLUP);
+long prevL = 0;
+long prevR = 0;
 
-  attach(this);
-  attachInterrupt(digitalPinToInterrupt(_pinG), Encoders::ISR_G, CHANGE);
-  attachInterrupt(digitalPinToInterrupt(_pinD), Encoders::ISR_D, CHANGE);
+// ---------- INTERRUPTIONS ----------
+void ISR_left(void)
+{
+  unsigned long now = micros();
+  if ((unsigned long)(now - lastEdgeUsL) >= ENC_MIN_PULSE_US)
+  {
+    ticksL++;
+    lastEdgeUsL = now;
+  }
 }
 
-void Encoders::reset() {
+void ISR_right(void)
+{
+  unsigned long now = micros();
+  if ((unsigned long)(now - lastEdgeUsR) >= ENC_MIN_PULSE_US)
+  {
+    ticksR++;
+    lastEdgeUsR = now;
+  }
+}
+
+void encoders_init(void)
+{
+  pinMode(ENC_L_A, INPUT_PULLUP);
+  pinMode(ENC_R_A, INPUT_PULLUP);
+
+  ticksL = 0;
+  ticksR = 0;
+  lastEdgeUsL = micros();
+  lastEdgeUsR = micros();
+
+  // Pour un encodeur simple en INPUT_PULLUP, le front FALLING est souvent
+  // le plus propre (impulsion active vers GND).
+  attachInterrupt(digitalPinToInterrupt(ENC_L_A), ISR_left, FALLING);
+  attachInterrupt(digitalPinToInterrupt(ENC_R_A), ISR_right, FALLING);
+}
+
+void encoders_read(long *left, long *right)
+{
   noInterrupts();
-  _ticksG = 0;
-  _ticksD = 0;
+  *left = ticksL;
+  *right = ticksR;
   interrupts();
 }
 
-void Encoders::attach(Encoders* instance) {
-  _self = instance;
-}
+void encoders_computeDelta(long left, long right, long *dL, long *dR)
+{
+  *dL = left - prevL;
+  *dR = right - prevR;
 
-void Encoders::ISR_G() { if (_self) _self->isrG(); }
-void Encoders::ISR_D() { if (_self) _self->isrD(); }
-
-void Encoders::isrG() {
-  static unsigned long last = 0;
-  unsigned long now = micros();
-  if (now - last > 300) {
-    _ticksG++;
-    last = now;
-  }
-}
-
-void Encoders::isrD() {
-  static unsigned long last = 0;
-  unsigned long now = micros();
-  if (now - last > 300) {
-    _ticksD++;
-    last = now;
-  }
+  prevL = left;
+  prevR = right;
 }

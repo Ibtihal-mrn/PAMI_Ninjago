@@ -1,28 +1,35 @@
 #include "../lib/ultrasonic.h"
 
-Ultrasonic::Ultrasonic(uint8_t trig, uint8_t echo, float seuilCm)
-    : _trig(trig), _echo(echo), _seuil(seuilCm) {}
+static int PIN_TRIG;
+static int PIN_ECHO;
 
-void Ultrasonic::begin()
-{
-  pinMode(_trig, OUTPUT);
-  pinMode(_echo, INPUT);
+void ultrasonic_init(int trigPin, int echoPin) {
+    PIN_TRIG = trigPin;
+    PIN_ECHO = echoPin;
+
+    pinMode(PIN_TRIG, OUTPUT);
+    pinMode(PIN_ECHO, INPUT);
 }
 
-float Ultrasonic::mesurerDistance()
-{
-  digitalWrite(_trig, LOW);
-  delayMicroseconds(2);
+int ultrasonic_readDistance() {
+    // Envoi de l'impulsion
+    digitalWrite(PIN_TRIG, LOW);
+    delayMicroseconds(2);
+    digitalWrite(PIN_TRIG, HIGH);
+    delayMicroseconds(10);
+    digitalWrite(PIN_TRIG, LOW);
 
-  digitalWrite(_trig, HIGH);
-  delayMicroseconds(10);
-  digitalWrite(_trig, LOW);
+    // Lecture du retour
+    long duree = pulseIn(PIN_ECHO, HIGH, 4000UL); // timeout 30ms (sécurité)
 
-  long duree = pulseIn(_echo, HIGH, 20000);
-  if (duree == 0)
-  {
-    return 0.0f;
-  }
+    if (duree == 0) {
+        return -1; // Pas de mesure valide
+    }
 
-  return duree * 0.034f / 2.0f;
+    int distance = (int)(duree / 58UL);
+    return distance;
+}
+
+bool ultrasonic_isObstacle(int distance, int threshold) {
+    return (distance > 0 && distance <= threshold);
 }
