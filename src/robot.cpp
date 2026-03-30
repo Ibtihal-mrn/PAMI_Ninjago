@@ -133,10 +133,16 @@ void robot_rotate_gyro(float target_deg, int pwmMax)
   const uint16_t STABLE_MS = 140;
   const float SLOW_ZONE_DEG = 14.0f;
   const float COAST_ZONE_DEG = 1.8f;
-  const float BRAKE_START_DEG = 40.0f;
+  // const float BRAKE_START_DEG = 40.0f;
   const float RATE_FILT_ALPHA = 0.25f;
   const uint16_t TIMEOUT_MS = 5000;
   const int RAMP_STEP = 8;
+
+  // Deceleration estimate (deg/s^2) used to anticipate stopping distance.
+  const float DECEL_DPS2 = 900.0f;
+
+  float absTargetDeg = fabs(target_deg);
+  float brakeStartDeg = constrain(absTargetDeg * 0.55f, 28.0f, 95.0f);
 
   // Recalage court du bias avant chaque rotation pour stabiliser la repetabilite.
   motors_stop();
@@ -181,10 +187,17 @@ void robot_rotate_gyro(float target_deg, int pwmMax)
     int pwm = (int)fabs(u);
     pwm = constrain(pwm, 0, pwmLimit);
 
-    float decelRatio = (absErr - ANGLE_TOL) / (BRAKE_START_DEG - ANGLE_TOL);
+    // float decelRatio = (absErr - ANGLE_TOL) / (BRAKE_START_DEG - ANGLE_TOL);
+    float decelRatio = (absErr - ANGLE_TOL) / (brakeStartDeg - ANGLE_TOL);
     decelRatio = constrain(decelRatio, 0.0f, 1.0f);
     int pwmCapErr = PWM_MIN_NEAR + (int)((pwmLimit - PWM_MIN_NEAR) * decelRatio);
     pwm = min(pwm, pwmCapErr);
+
+    float stopDistDeg = (rateToward > 0.0f) ? (rateToward * rateToward) / (2.0f * DECEL_DPS2) : 0.0f;
+    if (absErr <= stopDistDeg + 2.5f)
+      pwm = min(pwm, PWM_MIN_NEAR + 5);
+    if (absErr <= stopDistDeg)
+      pwm = DEAD_PWM;
 
     if (absErr < COAST_ZONE_DEG)
     {

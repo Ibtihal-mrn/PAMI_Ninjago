@@ -94,12 +94,30 @@ void loop()
   // -----------------------------------
 
 
-  robot_move_distance(200, 70);
+  robot_move_distance(160, 70);
   // robot_move_distance_gyro(1000, 70);
-  delay(200);
+  delay(500);
   robot_rotate_gyro(90, 150);
-  delay(200);
-  robot_move_distance(500, 100);
+  delay(500);
+  robot_move_distance(380, 80);
+  delay(500);
+  robot_rotate_gyro(180, 150);
+  delay(500);
+  robot_move_distance(325, 70);
+  delay(500);
+  robot_rotate_gyro(90, 150);
+  delay(500);
+  robot_move_distance(520, 70);
+  delay(500);
+  robot_rotate_gyro(90, 150);
+  delay(500);
+  robot_move_distance(380, 70);
+  delay(500);
+  robot_rotate_gyro(-90, 150);
+  delay(500);
+  // robot_move_distance(1000, 70);
+
+
 
  
   // delay(2000);
