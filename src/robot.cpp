@@ -376,3 +376,83 @@ void robot_move_distance(float dist_mm, int pwmBaseTarget)
 
   motors_stop();
 }
+
+void robot_move_distance_gyro(float dist_mm, int pwmBaseTarget)
+{
+  const uint16_t DT_MS = 10;
+  const float KP_HEAD = 2.2f;  // PWM/deg
+  const float KD_HEAD = 0.45f; // PWM/(deg/s)
+  const float RATE_FILT_ALPHA = 0.25f;
+
+  const int PWM_MIN = 45;
+  const int PWM_MAX = 255;
+  const int CORR_MAX = 60;
+  const unsigned long MOVE_TIMEOUT_MS = 12000;
+
+  long target = ticks_for_distance_mm(fabs(dist_mm));
+  int dir = (dist_mm >= 0.0f) ? 1 : -1;
+
+  long startL, startR;
+  encoders_read(&startL, &startR);
+
+  // Recalage gyro court au depart (robot immobile)
+  motors_stop();
+  delay(120);
+  (void)imu_calibrate(120, 2);
+
+  float headingDeg = 0.0f;
+  float rateFilt = 0.0f;
+
+  unsigned long tPrev = micros();
+  unsigned long startMs = millis();
+
+  while (true)
+  {
+    unsigned long now = micros();
+    if ((unsigned long)(now - tPrev) < (unsigned long)DT_MS * 1000UL)
+      continue;
+
+    float dt = (float)(now - tPrev) / 1000000.0f;
+    tPrev = now;
+
+    long curL, curR;
+    encoders_read(&curL, &curR);
+
+    long distTicksL = labs(curL - startL);
+    long distTicksR = labs(curR - startR);
+    long avgTicks = (distTicksL + distTicksR) / 2;
+    if (avgTicks >= target)
+      break;
+
+    if (millis() - startMs > MOVE_TIMEOUT_MS)
+    {
+      Serial.println("[WARN] move_distance_gyro timeout");
+      break;
+    }
+
+    // Estimation de cap via gyro (integration du yaw rate)
+    float rateRaw = imu_readGyroZ_dps();
+    rateFilt += RATE_FILT_ALPHA * (rateRaw - rateFilt);
+    headingDeg += rateFilt * dt;
+
+    // Si heading > 0, la correction freine la roue gauche et accelere la droite.
+    float corr = KP_HEAD * headingDeg + KD_HEAD * rateFilt;
+    corr = constrain(corr, -CORR_MAX, CORR_MAX);
+
+    int pwmBase = constrain(pwmBaseTarget, 0, PWM_MAX);
+    int pwmL = constrain((int)(pwmBase - corr + trimL), 0, PWM_MAX);
+    int pwmR = constrain((int)(pwmBase + corr + trimR), 0, PWM_MAX);
+
+    if (pwmL > 0)
+      pwmL = max(pwmL, PWM_MIN);
+    if (pwmR > 0)
+      pwmR = max(pwmR, PWM_MIN);
+
+    if (dir > 0)
+      motors_forward(pwmL, pwmR);
+    else
+      motors_backward(pwmL, pwmR);
+  }
+
+  motors_stop();
+}
