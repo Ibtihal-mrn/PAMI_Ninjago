@@ -38,6 +38,12 @@ static const float VEL_TRIM_R = 0.90f; // biais statique droite plus fort
 // tu pourras le recalibrer ensuite
 static const float PWM_TO_TICKS_PER_SEC = 8.0;
 
+// Filtre vitesse: indispensable quand dL/dR valent souvent 0 ou 1 tick par dt.
+static const float VEL_FILT_ALPHA = 0.22f;
+
+// Limite la correction de cap (sinon gros a-coups quand l'erreur cumule)
+static const float HEADING_CORR_MAX_TICKS_PER_SEC = 120.0f;
+
 // --------------------------------------------
 
 static inline int sgn_int(int x) { return (x > 0) - (x < 0); }
@@ -47,6 +53,8 @@ void control_reset(DrivePIState &st)
   st.iL = 0;
   st.iR = 0;
   st.pwmBase = 0;
+  st.vLf = 0;
+  st.vRf = 0;
 }
 
 void control_driveStraight_PI(
@@ -65,11 +73,14 @@ void control_driveStraight_PI(
   }
 
   // ---- vitesses mesurées en ticks/s ----
-  float vL = dL / dt;
-  float vR = dR / dt;
+  float vL_raw = dL / dt;
+  float vR_raw = dR / dt;
+  st.vLf += VEL_FILT_ALPHA * (vL_raw - st.vLf);
+  st.vRf += VEL_FILT_ALPHA * (vR_raw - st.vRf);
 
   // ---- boucle CAP : correction basée sur erreur cumulée ----
   float headingCorr = K_HEADING * (float)headingErrTicks; // en "ticks/s"
+  headingCorr = constrain(headingCorr, -HEADING_CORR_MAX_TICKS_PER_SEC, HEADING_CORR_MAX_TICKS_PER_SEC);
 
   // ---- vitesse cible base ----
   float vBase = st.pwmBase * PWM_TO_TICKS_PER_SEC;
@@ -81,13 +92,13 @@ void control_driveStraight_PI(
   vR_ref *= VEL_TRIM_R;
 
   // ---- PI vitesse gauche ----
-  float eL = vL_ref - vL;
+  float eL = vL_ref - st.vLf;
   st.iL += eL * dt;
   st.iL = constrain(st.iL, -I_CLAMP, I_CLAMP);
   float uL = KP_VEL_L * eL + KI_VEL_L * st.iL;
 
   // ---- PI vitesse droite ----
-  float eR = vR_ref - vR;
+  float eR = vR_ref - st.vRf;
   st.iR += eR * dt;
   st.iR = constrain(st.iR, -I_CLAMP, I_CLAMP);
   float uR = KP_VEL_R * eR + KI_VEL_R * st.iR;

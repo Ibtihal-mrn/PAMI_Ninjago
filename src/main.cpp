@@ -93,28 +93,26 @@ void loop()
   // --------- Séquence de test 2 ---------
   // -----------------------------------
 
-
-  robot_move_distance(160, 70);
-  // robot_move_distance_gyro(1000, 70);
+  robot_move_distance(500, 120);
   delay(500);
-  robot_rotate_gyro(90, 150);
-  delay(500);
-  robot_move_distance(380, 80);
-  delay(500);
-  robot_rotate_gyro(180, 150);
-  delay(500);
-  robot_move_distance(325, 70);
-  delay(500);
-  robot_rotate_gyro(90, 150);
-  delay(500);
-  robot_move_distance(520, 70);
-  delay(500);
-  robot_rotate_gyro(90, 150);
-  delay(500);
-  robot_move_distance(380, 70);
-  delay(500);
-  robot_rotate_gyro(-90, 150);
-  delay(500);
+  // robot_rotate_gyro(90, 150);
+  // delay(500);
+  // robot_move_distance(320, 80);
+  // delay(1000);
+  // robot_rotate_gyro(180, 150);
+  // delay(1000);
+  // robot_move_distance(270, 70);
+  // delay(500);
+  // robot_rotate_gyro(90, 150);
+  // delay(1000);
+  // robot_move_distance(280, 70);
+  // delay(500);
+  // robot_rotate_gyro(90, 150);
+  // delay(500);
+  // robot_move_distance(380, 70);
+  // delay(500);
+  // robot_rotate_gyro(-90, 150);
+  // delay(500);
   // robot_move_distance(1000, 70);
 
 

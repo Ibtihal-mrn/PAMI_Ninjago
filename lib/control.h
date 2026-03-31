@@ -8,6 +8,10 @@ struct DrivePIState {
   float iL = 0;
   float iR = 0;
   int pwmBase = 0;
+
+  // Filtrage vitesse (encodeurs quantifies -> v saute entre 0 et 1 tick/DT)
+  float vLf = 0;
+  float vRf = 0;
 };
 
 void control_reset(DrivePIState &st);
