@@ -6,8 +6,60 @@
 #include "../lib/imu.h"
 #include "../lib/safety.h"
 #include "../lib/ultrasonic.h"
+#include "../lib/emergencyButton.h"
 
 #define DRIVE_PI_DEBUG 1
+
+// ------------------------------------------------------------
+// Pause/reprise de la séquence via le bouton d'arrêt d'urgence
+// - Toggle sur front montant de emergencyButton_isPressed()
+// - En pause: moteurs stop + attente (polling + debounce)
+// ------------------------------------------------------------
+static bool g_pauseEnabled = true;
+static bool g_isPaused = false;
+static bool g_prevBtn = false;
+static unsigned long g_lastToggleMs = 0;
+
+static void pause_updateToggle()
+{
+  if (!g_pauseEnabled)
+    return;
+
+  bool btn = emergencyButton_isPressed();
+  unsigned long now = millis();
+
+  // Debounce simple + edge detect
+  const unsigned long DEBOUNCE_MS = 80;
+  if (btn && !g_prevBtn && (unsigned long)(now - g_lastToggleMs) >= DEBOUNCE_MS)
+  {
+    g_isPaused = !g_isPaused;
+    g_lastToggleMs = now;
+  }
+
+  g_prevBtn = btn;
+}
+
+// Retourne la durée passée en pause (ms). 0 => pas de pause.
+static unsigned long pause_waitIfNeeded()
+{
+  pause_updateToggle();
+  if (!g_isPaused)
+    return 0;
+
+  motors_stop();
+  unsigned long pauseStart = millis();
+
+  while (true)
+  {
+    pause_updateToggle();
+    if (!g_isPaused)
+      break;
+    delay(5);
+  }
+
+  motors_stop();
+  return (unsigned long)(millis() - pauseStart);
+}
 
 void robot_init()
 {
@@ -93,8 +145,22 @@ void robot_rotate(float angle_deg, int speed)
   {
     unsigned long now = micros();
     if ((unsigned long)(now - tPrev) < (unsigned long)DT_MS * 1000UL)
+    {
+      unsigned long pausedMs = pause_waitIfNeeded();
+      if (pausedMs > 0)
+        tPrev = micros();
       continue;
+    }
     tPrev += (unsigned long)DT_MS * 1000UL;
+
+    {
+      unsigned long pausedMs = pause_waitIfNeeded();
+      if (pausedMs > 0)
+      {
+        tPrev = micros();
+        continue;
+      }
+    }
 
     safety_update();
     if (safety_isTriggered())
@@ -161,6 +227,16 @@ void robot_rotate_gyro(float target_deg, int pwmMax)
 
   while (true)
   {
+    unsigned long pausedMs = pause_waitIfNeeded();
+    if (pausedMs > 0)
+    {
+      startMs += pausedMs;
+      if (stableStart != 0)
+        stableStart += pausedMs;
+      tPrev = micros();
+      continue;
+    }
+
     unsigned long now = micros();
     if ((unsigned long)(now - tPrev) < (unsigned long)DT_MS * 1000UL)
       continue;
@@ -332,6 +408,23 @@ void robot_move_distance(float dist_mm, int pwmBaseTarget)
 
   while (true)
   {
+    unsigned long pausedMs = pause_waitIfNeeded();
+    if (pausedMs > 0)
+    {
+      startMs += pausedMs;
+      if (settling)
+        settleStartMs += pausedMs;
+
+      // Repart proprement (évite dt énorme / rattrapage / intégrale PI)
+      long curL, curR;
+      encoders_read(&curL, &curR);
+      prevL = curL;
+      prevR = curR;
+      control_reset(st);
+      tPrev = micros();
+      continue;
+    }
+
     // période fixe
     unsigned long now = micros();
     if ((unsigned long)(now - tPrev) < (unsigned long)DT_MS * 1000UL)
@@ -499,6 +592,14 @@ void robot_move_distance_gyro(float dist_mm, int pwmBaseTarget)
 
   while (true)
   {
+    unsigned long pausedMs = pause_waitIfNeeded();
+    if (pausedMs > 0)
+    {
+      startMs += pausedMs;
+      tPrev = micros();
+      continue;
+    }
+
     unsigned long now = micros();
     if ((unsigned long)(now - tPrev) < (unsigned long)DT_MS * 1000UL)
       continue;
@@ -546,4 +647,19 @@ void robot_move_distance_gyro(float dist_mm, int pwmBaseTarget)
   }
 
   motors_stop();
+}
+
+void robot_pauseable_delay(uint32_t ms)
+{
+  unsigned long start = millis();
+  while ((unsigned long)(millis() - start) < ms)
+  {
+    unsigned long pausedMs = pause_waitIfNeeded();
+    if (pausedMs > 0)
+    {
+      start += pausedMs; // le temps en pause ne compte pas
+      continue;
+    }
+    delay(5);
+  }
 }
