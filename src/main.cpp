@@ -4,12 +4,33 @@
 #include "../lib/control.h"
 #include "../lib/robot.h"
 #include "../lib/imu.h"
+#include "../lib/teamSwitch.h"
+#include "../lib/startSwitch.h"
+
+TeamSwitch teamSwitch(5);  // exemple: switch sur pin 8
+StartSwitch startSwitch(4); // exemple: switch sur pin 9
 
 void setup()
 {
   Serial.begin(9600);
   robot_init();
+
+  teamSwitch.begin();
+  delay(100);
+  
+  // Lire et afficher la team détectée
+  Team selectedTeam = teamSwitch.readTeam();
+  if (selectedTeam == Team::A) {
+    Serial.println("Équipe A sélectionnée");
+  } else {
+    Serial.println("Équipe B sélectionnée");
+  }
+
+  startSwitch.begin();
+  startSwitch.waitForStart();
 }
+
+
 
 void loop()
 {
