@@ -7,8 +7,8 @@
 #include "../lib/teamSwitch.h"
 #include "../lib/startSwitch.h"
 
-TeamSwitch teamSwitch(5);  // exemple: switch sur pin 8
-StartSwitch startSwitch(4); // exemple: switch sur pin 9
+TeamSwitch teamSwitch(5);  
+StartSwitch startSwitch(4); 
 
 void setup()
 {
@@ -122,12 +122,15 @@ void loop()
   robot_pauseable_delay(1000);
   robot_rotate_gyro(180, 150);
   robot_pauseable_delay(1000);
-  robot_move_distance(270, 70);
+  robot_move_distance(280, 70);
   robot_pauseable_delay(500);
   robot_rotate_gyro(90, 150);
   robot_pauseable_delay(1000);
-  robot_move_distance(280, 70);
+  robot_move_distance(340, 70);
   robot_pauseable_delay(500);
+  robot_rotate_gyro(90, 150);
+  robot_pauseable_delay(500);
+  robot_move_distance(360, 70);
   // robot_rotate_gyro(90, 150);
   // delay(500);
   // robot_move_distance(380, 70);
