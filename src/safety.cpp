@@ -1,94 +1,49 @@
 #include "../lib/safety.h"
+#include "../lib/emergencyButton.h"
+#include "../lib/ultrasonic.h"
 
-Safety::Safety(Ultrasonic &us1, Ultrasonic &us2, EmergencyButton &btn, Life &life, Motors &motors)
-    : _us1(us1), _us2(us2), _btn(btn), _life(life), _motors(motors) {}
+static int g_obstacle_cm;
+static uint16_t g_sonar_period;
 
-bool Safety::check()
-{
-  // 1) urgence
-  if (_btn.urgenceActive())
-  {
-    _motors.stop();
-    Serial.println("🛑 ARRET D'URGENCE ACTIVE");
-    return true;
+static bool g_triggered = false;
+static int g_lastDist = -1;
+static unsigned long g_lastSonarMs = 0;
+
+void safety_init(int obstacle_cm, uint16_t sonar_period_ms) {
+  g_obstacle_cm = obstacle_cm;
+  g_sonar_period = sonar_period_ms;
+  g_triggered = false;
+
+  emergencyButton_init();
+}
+
+void safety_update() {
+  // bouton (rapide)
+  if (emergencyButton_isPressed()) {
+    g_triggered = true;
   }
 
-  // 2) fin de vie
-  if (_life.check())
-  {
-    _motors.stop();
-    while (1)
-    {
-    } // comme ton code: stop définitif
-  }
+  // ultrason (lent → throttling)
+  unsigned long now = millis();
+  if (now - g_lastSonarMs >= g_sonar_period) {
+    g_lastSonarMs = now;
 
-  // 3) obstacle (même logique que ton gererObstacle)
-  float distance1 = _us1.mesurerDistance();
-  float distance2 = _us2.mesurerDistance();
-  bool obstacle1 = (distance1 > 0 && distance1 <= _us1.seuil());
-  bool obstacle2 = (distance2 > 0 && distance2 <= _us2.seuil());
+    int d = ultrasonic_readDistance();
+    g_lastDist = d;
 
-  if (obstacle1 || obstacle2)
-  {
-    float distance = obstacle1 && (!obstacle2 || distance1 <= distance2) ? distance1 : distance2;
-    const char *capteur = obstacle1 && (!obstacle2 || distance1 <= distance2) ? "US1" : "US2";
-
-    if (!_obstaclePresent)
-    {
-      Serial.print("🚨 OBSTACLE DETECTE A ");
-      Serial.print(distance);
-      Serial.print(" cm (capteur ");
-      Serial.print(capteur);
-      Serial.println(") -> ARRET");
-      _obstaclePresent = true;
+    if (d > 0 && d <= g_obstacle_cm) {
+      g_triggered = true;
     }
-
-    _motors.stop();
-
-    while (obstacle1 || obstacle2)
-    {
-      // urgence prioritaire pendant l’attente
-      // if (_btn.urgenceActive()) {
-      //   _motors.stop();
-      //   Serial.println("🛑 ARRET D'URGENCE ACTIVE");
-      //   return true;
-      // }
-      // fin de vie pendant l’attente
-      if (_life.check())
-      {
-        _motors.stop();
-        while (1)
-        {
-        }
-      }
-
-      distance1 = _us1.mesurerDistance();
-      distance2 = _us2.mesurerDistance();
-      obstacle1 = (distance1 > 0 && distance1 <= _us1.seuil());
-      obstacle2 = (distance2 > 0 && distance2 <= _us2.seuil());
-
-      distance = obstacle1 && (!obstacle2 || distance1 <= distance2) ? distance1 : distance2;
-      capteur = obstacle1 && (!obstacle2 || distance1 <= distance2) ? "US1" : "US2";
-
-      Serial.print("⏳ Obstacle toujours present : ");
-      Serial.print(distance);
-      if (obstacle1 || obstacle2)
-      {
-        Serial.print(" cm (capteur ");
-        Serial.print(capteur);
-        Serial.println(")");
-      }
-      else
-      {
-        Serial.println(" cm");
-      }
-      delay(200);
-    }
-
-    Serial.println("✅ OBSTACLE DISPARU -> REPRISE");
-    _motors.runForward(); // relance “dans le bon sens” comme toi
-    _obstaclePresent = false;
   }
+}
 
-  return false;
+bool safety_isTriggered() {
+  return g_triggered;
+}
+
+void safety_clearIfSafe() {
+  if (!emergencyButton_isPressed() &&
+      (g_lastDist <= 0 || g_lastDist > g_obstacle_cm)) {
+    g_triggered = false;
+  }
 }

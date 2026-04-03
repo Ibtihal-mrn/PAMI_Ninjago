@@ -1,29 +1,25 @@
-#pragma once
+#ifndef ENCODERS_H
+#define ENCODERS_H
+
 #include <Arduino.h>
 
-class Encoders {
-public:
-  Encoders(uint8_t pinG, uint8_t pinD);
+// ---------- ENCODEURS ----------
+// Arduino Uno: interruptions externes uniquement sur D2 et D3
+#define ENC_L_A 2 // interruption
+#define ENC_R_A 3 // interruption
 
-  void begin();
-  void reset();
+extern volatile long ticksL;
+extern volatile long ticksR;
 
-  long ticksG() const { return _ticksG; }
-  long ticksD() const { return _ticksD; }
+extern long prevL;
+extern long prevR;
 
-  // ISR
-  void isrG();
-  void isrD();
+void encoders_init(void);
+void encoders_read(long *left, long *right);
+void encoders_computeDelta(long left, long right, long *dL, long *dR);
 
-  // helpers statiques pour attachInterrupt
-  static void attach(Encoders* instance);
-  static void ISR_G();
-  static void ISR_D();
+// ISR doivent être visibles pour attachInterrupt
+void ISR_left(void);
+void ISR_right(void);
 
-private:
-  uint8_t _pinG, _pinD;
-  volatile long _ticksG = 0;
-  volatile long _ticksD = 0;
-
-  static Encoders* _self;
-};
+#endif

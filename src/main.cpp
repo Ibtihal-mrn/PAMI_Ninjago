@@ -1,190 +1,190 @@
 #include <Arduino.h>
-#include <Wire.h>
-#include <Adafruit_MotorShield.h>
-#include <Servo.h>
-
-#include "../lib/motors.h"
 #include "../lib/encoders.h"
-#include "../lib/ultrasonic.h"
-#include "../lib/emergencyButton.h"
-#include "../lib/life.h"
-#include "../lib/safety.h"
+#include "../lib/motors.h"
+#include "../lib/control.h"
 #include "../lib/robot.h"
-#include "../lib/startSwitch.h"
+#include "../lib/imu.h"
 #include "../lib/teamSwitch.h"
+#include "../lib/startSwitch.h"
 
-// ===== tes constantes =====
-const unsigned long DUREE_VIE_MS = 100000;
-const int PIN_SERVO = 9;
-const int SERVO_POS_INIT = 0;
-const int SERVO_POS_FIN = 90;
-const int TRIG_PIN_1 = 6;
-const int ECHO_PIN_1 = 7;
-const int TRIG_PIN_2 = 10;
-const int ECHO_PIN_2 = 11;
-const float DISTANCE_SEUIL = 10.0;
-const int PIN_START = 4;
-const int PIN_TEAM = 5;
-const int PIN_URGENCE = 8;
-
-// mouvements
-#define TICKS_5CM 30
-#define TICKS_15CM 54
-#define TICKS_90DEG 16
-#define TICKS_180DEG 34
-
-// PID (gardé)
-#define BASE_SPEED 70
-#define KP 1.0
-#define KI 0.03
-#define MAX_CORR 12
-
-// ===== objets =====
-Adafruit_MotorShield AFMS;
-Motors motors(AFMS, 1, 2);
-Encoders encoders(2, 3);
-Ultrasonic us1(TRIG_PIN_1, ECHO_PIN_1, DISTANCE_SEUIL);
-Ultrasonic us2(TRIG_PIN_2, ECHO_PIN_2, DISTANCE_SEUIL);
-EmergencyButton btn(PIN_URGENCE);
-Servo servoFin;
-Life life(DUREE_VIE_MS, servoFin, SERVO_POS_INIT, SERVO_POS_FIN);
-Safety safety(us1, us2, btn, life, motors);
-Robot robot(motors, encoders, safety);
-StartSwitch startSwitch(PIN_START);
-TeamSwitch teamSwitch(PIN_TEAM);
-Team team = Team::A; // valeur par défaut, sera mise à jour dans setup()
+TeamSwitch teamSwitch(5);  
+StartSwitch startSwitch(4); 
 
 void setup()
 {
   Serial.begin(9600);
-  while (!Serial)
-  {
+  robot_init();
+
+  teamSwitch.begin();
+  delay(100);
+  
+  // Lire et afficher la team détectée
+  Team selectedTeam = teamSwitch.readTeam();
+  if (selectedTeam == Team::A) {
+    Serial.println("Équipe A sélectionnée");
+  } else {
+    Serial.println("Équipe B sélectionnée");
   }
 
-  Serial.println("=== PAMI - REGULATION VITESSE (PI) + ARRET URGENCE ===");
-
-  // ===== TIRETTE =====
   startSwitch.begin();
   startSwitch.waitForStart();
-
-  // ===== TEAM SWITCH =====
-  teamSwitch.begin();
-  team = teamSwitch.readTeam();
-  if (team == Team::A)
-  {
-    Serial.println("Equipe A sélectionnée");
-  }
-  else
-  {
-    Serial.println("Equipe B sélectionnée");
-  }
-
-  if (!motors.begin())
-  {
-    Serial.println("❌ ERREUR SHIELD");
-    while (1)
-    {
-    }
-  }
-
-  encoders.begin();
-  us1.begin();
-  us2.begin();
-  btn.begin();
-
-  servoFin.attach(PIN_SERVO);
-  servoFin.write(SERVO_POS_INIT);
-  life.begin();
-
-  delay(3000);
 }
+
+
 
 void loop()
 {
+  static bool runSequence = true;  
 
-  if (team == Team::A)
-  {
-    Serial.println("=== SEQUENCE EQUIPE A ===");
-    Serial.println("➡️ Avance 5 cm");
-    robot.avancer_ticks(TICKS_5CM);
-
-    Serial.println("↪️ Rotation 90° gauche");
-    robot.tourner_gauche_ticks(TICKS_90DEG);
-
-    Serial.println("➡️ Avance 15 cm");
-    robot.avancer_ticks(TICKS_15CM);
-
-    Serial.println("🔁 Rotation 180° (retour)");
-    robot.tourner_gauche_ticks(TICKS_180DEG);
-
-    Serial.println("➡️ Avance 5 cm");
-    robot.avancer_ticks(50);
-
-    Serial.println("↪️ Rotation 90° gauche");
-    robot.tourner_gauche_ticks(TICKS_90DEG);
-
-    Serial.println("➡️ Avance 15 cm");
-    robot.avancer_ticks(130);
-
-    Serial.println("↪️ Rotation 90° gauche");
-    robot.tourner_gauche_ticks(TICKS_90DEG);
-
-    Serial.println("➡️ Avance 5 cm");
-    robot.avancer_ticks(TICKS_5CM + 10);
-
-    Serial.println("↪️ Rotation 90° gauche");
-    robot.tourner_gauche_ticks(TICKS_90DEG + 2);
-
-    Serial.println("➡️ Avance 15 cm");
-    robot.avancer_ticks(170);
-
-    Serial.println("✅ FIN SEQUENCE");
-    while (1)
-    {
-    }
+  if (!runSequence) {
+    return; 
   }
 
-  else
-  {
+  // -----------------------------------
+  // --------- Carré sans gyro ---------
+  // -----------------------------------
+  // delay(2000);
+  // robot_rotate(120, 140);
+  // delay(2000);
+  // robot_move_distance(1000, 140);
+  // delay(2000);
+  // robot_rotate(120, 140);
+  // delay(2000);
+  // robot_move_distance(1000, 140);
+  // delay(2000);
+  // robot_rotate(120, 140);
+  // delay(2000);
+  // robot_move_distance(1000, 140);
+  // delay(2000);
+  // robot_rotate(120, 140);
+  // robot_stop();
+  
 
-    Serial.println("=== SEQUENCE EQUIPE B ===");
+  // -----------------------------------
+  // --------- Carré avec gyro ---------
+  // -----------------------------------
 
-    Serial.println("➡️ Avance 5 cm");
-    robot.avancer_ticks(TICKS_5CM);
+  // robot_move_distance(1255, 140);
+  // delay(2000);
+  // robot_rotate_gyro(90, 150);
+  // delay(2000);
 
-    Serial.println("↪️ Rotation 90° gauche");
-    robot.tourner_gauche_ticks(TICKS_90DEG);
+  // robot_move_distance(1255, 140);
+  // delay(2000);
+  // robot_rotate_gyro(90, 150);
+  // delay(2000);
 
-    Serial.println("➡️ Avance 15 cm");
-    robot.avancer_ticks(TICKS_15CM);
+  // robot_move_distance(1255, 140);
+  // delay(2000);
+  // robot_rotate_gyro(90, 150);
+  // delay(2000);
 
-    Serial.println("🔁 Rotation 180° (retour)");
-    robot.tourner_gauche_ticks(TICKS_180DEG);
+  // robot_move_distance(1255, 140);
+  // delay(2000);
+  // robot_rotate_gyro(90, 150);
+  // delay(2000);
 
-    Serial.println("➡️ Avance 5 cm");
-    robot.avancer_ticks(50);
+  // robot_stop();
 
-    Serial.println("↪️ Rotation 90° gauche");
-    robot.tourner_gauche_ticks(TICKS_90DEG);
 
-    Serial.println("➡️ Avance 15 cm");
-    robot.avancer_ticks(130);
 
-    Serial.println("↪️ Rotation 90° gauche");
-    robot.tourner_gauche_ticks(TICKS_90DEG);
+  // -----------------------------------
+  // --------- Séquence de test ---------
+  // -----------------------------------
 
-    Serial.println("➡️ Avance 5 cm");
-    robot.avancer_ticks(TICKS_5CM + 10);
+  // robot_move_distance(1255, 140);
+  // delay(2000);
+ 
+  // bras_deployer();
+  // delay(2000);
 
-    Serial.println("↪️ Rotation 90° gauche");
-    robot.tourner_gauche_ticks(TICKS_90DEG + 2);
+  // robot_rotate_gyro(180, 160);
+  // delay(2000);
 
-    Serial.println("➡️ Avance 15 cm");
-    robot.avancer_ticks(170);
+  // robot_move_distance(1250, 140);
+  // delay(2000);
 
-    Serial.println("✅ FIN SEQUENCE");
-    while (1)
-    {
-    }
-  }
-}
+  // bras_retracter();
+  // delay(2000);
+
+  // robot_stop();
+
+
+  // -----------------------------------
+  // --------- Séquence de test 2 ---------
+  // -----------------------------------
+
+  robot_move_distance(160, 70);
+  robot_pauseable_delay(500);
+  robot_rotate_gyro(90, 150);
+  robot_pauseable_delay(500);
+  robot_move_distance(320, 80);
+  robot_pauseable_delay(1000);
+  robot_rotate_gyro(180, 150);
+  robot_pauseable_delay(1000);
+  robot_move_distance(280, 70);
+  robot_pauseable_delay(500);
+  robot_rotate_gyro(90, 150);
+  robot_pauseable_delay(1000);
+  robot_move_distance(340, 70);
+  robot_pauseable_delay(500);
+  robot_rotate_gyro(90, 150);
+  robot_pauseable_delay(500);
+  robot_move_distance(360, 70);
+  // robot_rotate_gyro(90, 150);
+  // delay(500);
+  // robot_move_distance(380, 70);
+  // delay(500);
+  // robot_rotate_gyro(-90, 150);
+  // delay(500);
+  // robot_move_distance(1000, 70);
+
+
+
+ 
+  // delay(2000);
+
+  // robot_move_distance(-200, 140);
+  // delay(2000);
+
+  // robot_rotate_gyro(-180, 160);
+  // delay(2000);
+
+  // robot_move_distance(800, 140);
+  // delay(2000);
+
+  // bras_retracter();
+  // delay(2000);
+
+  robot_stop();
+
+
+ 
+
+
+
+  runSequence = false; 
+} 
+
+
+// Print 
+// Serial.print("ticksL="); Serial.print(ticksL);
+// Serial.print(" ticksR="); Serial.println(ticksR);
+
+// Serial.print(digitalRead(ENC_R_A));
+// Serial.print(" ");
+// Serial.println(digitalRead(ENC_R_B));
+// delay(50);
+
+
+// long l, r ; 
+// encoders_read(&l, &r);
+
+// static long lastL = 0, lastR = 0;
+
+// Serial.print("dTicksL="); Serial.print(l - lastL);
+// Serial.print(" dTicksR="); Serial.println(r - lastR);
+
+
+// lastL = ticksL;
+// lastR = ticksR;
