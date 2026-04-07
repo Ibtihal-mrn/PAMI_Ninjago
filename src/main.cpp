@@ -37,37 +37,37 @@ void setup()
   Serial.println("Tirette detectee -> DEMARRAGE");
   delay(300);
 
-  // Smoke test moteur (bypass encodeurs/regulation) : doit bouger comme ton sketch minimal.
-  Serial.println("[smoke] moteurs AVANT 1s");
-  motors_forward(120, 120);
-  delay(1000);
-  motors_stop();
-  delay(300);
+  // // Smoke test moteur (bypass encodeurs/regulation) : doit bouger comme ton sketch minimal.
+  // Serial.println("[smoke] moteurs AVANT 1s");
+  // motors_forward(120, 120);
+  // delay(1000);
+  // motors_stop();
+  // delay(300);
 
-  Serial.println("[smoke] moteurs ARRIERE 1s");
-  motors_backward(120, 120);
-  delay(1000);
-  motors_stop();
-  delay(500);
+  // Serial.println("[smoke] moteurs ARRIERE 1s");
+  // motors_backward(120, 120);
+  // delay(1000);
+  // motors_stop();
+  // delay(500);
 
-  // Diagnostic encodeurs: sans bouger, les ticks ne doivent PAS monter.
-  ticksL = 0;
-  ticksR = 0;
-  Serial.println("[diag] encodeurs a l'arret (2s)");
-  unsigned long t0 = millis();
-  while (millis() - t0 < 2000)
-  {
-    static unsigned long last = 0;
-    if (millis() - last >= 200)
-    {
-      last = millis();
-      Serial.print("ticksL=");
-      Serial.print((long)ticksL);
-      Serial.print(" ticksR=");
-      Serial.println((long)ticksR);
-    }
-    delay(5);
-  }
+  // // Diagnostic encodeurs: sans bouger, les ticks ne doivent PAS monter.
+  // ticksL = 0;
+  // ticksR = 0;
+  // Serial.println("[diag] encodeurs a l'arret (2s)");
+  // unsigned long t0 = millis();
+  // while (millis() - t0 < 2000)
+  // {
+  //   static unsigned long last = 0;
+  //   if (millis() - last >= 200)
+  //   {
+  //     last = millis();
+  //     Serial.print("ticksL=");
+  //     Serial.print((long)ticksL);
+  //     Serial.print(" ticksR=");
+  //     Serial.println((long)ticksR);
+  //   }
+  //   delay(5);
+  // }
 }
 
 
@@ -87,17 +87,19 @@ void loop()
   if (g_team == Team::A)
   {
     Serial.println("=== Sequence equipe A ===");
-    robot_move_distance(160, 70);
-    robot_pauseable_delay(500);
-    robot_pauseable_delay(500);
-    robot_move_distance(320, 80);
-    robot_pauseable_delay(1000);
-    robot_pauseable_delay(1000);
-    robot_move_distance(270, 70);
-    robot_pauseable_delay(500);
-    robot_pauseable_delay(1000);
-    robot_move_distance(280, 70);
-    robot_pauseable_delay(500);
+    robot_move_distance(120, 120);
+    delay(500);
+    robot_move_distance(120, 120);
+    // robot_pauseable_delay(500);
+    // robot_pauseable_delay(500);
+    // robot_move_distance(320, 80);
+    // robot_pauseable_delay(1000);
+    // robot_pauseable_delay(1000);
+    // robot_move_distance(270, 70);
+    // robot_pauseable_delay(500);
+    // robot_pauseable_delay(1000);
+    // robot_move_distance(280, 70);
+    // robot_pauseable_delay(500);
   }
   else
   {
