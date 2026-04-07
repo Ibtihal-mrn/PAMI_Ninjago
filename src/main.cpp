@@ -3,31 +3,71 @@
 #include "../lib/motors.h"
 #include "../lib/control.h"
 #include "../lib/robot.h"
-#include "../lib/imu.h"
 #include "../lib/teamSwitch.h"
-#include "../lib/startSwitch.h"
 
-TeamSwitch teamSwitch(5);  
-StartSwitch startSwitch(4); 
+static const uint8_t PIN_TIRETTE = 4;
+static const uint8_t PIN_TEAM_SWITCH = 5;
+
+static Team g_team = Team::A;
 
 void setup()
 {
   Serial.begin(9600);
   robot_init();
 
+  // Lecture du switch équipe (comme dans ton sketch): LOW => équipe B, HIGH => équipe A.
+  TeamSwitch teamSwitch(PIN_TEAM_SWITCH);
   teamSwitch.begin();
-  delay(100);
-  
-  // Lire et afficher la team détectée
-  Team selectedTeam = teamSwitch.readTeam();
-  if (selectedTeam == Team::A) {
-    Serial.println("Équipe A sélectionnée");
-  } else {
-    Serial.println("Équipe B sélectionnée");
+  g_team = teamSwitch.readTeam();
+  if (g_team == Team::B)
+    Serial.println("Equipe B selectionnee");
+  else
+    Serial.println("Equipe A selectionnee");
+
+  pinMode(PIN_TIRETTE, INPUT_PULLUP);
+  Serial.println("En attente de la tirette...");
+
+  // Comme dans ton code qui marche: on attend que la broche passe a LOW.
+  // Avec INPUT_PULLUP, LOW = broche tiree vers GND (tirette retiree / contact ferme selon cablage).
+  while (digitalRead(PIN_TIRETTE) == HIGH)
+  {
+    delay(10);
   }
 
-  startSwitch.begin();
-  startSwitch.waitForStart();
+  Serial.println("Tirette detectee -> DEMARRAGE");
+  delay(300);
+
+  // Smoke test moteur (bypass encodeurs/regulation) : doit bouger comme ton sketch minimal.
+  Serial.println("[smoke] moteurs AVANT 1s");
+  motors_forward(120, 120);
+  delay(1000);
+  motors_stop();
+  delay(300);
+
+  Serial.println("[smoke] moteurs ARRIERE 1s");
+  motors_backward(120, 120);
+  delay(1000);
+  motors_stop();
+  delay(500);
+
+  // Diagnostic encodeurs: sans bouger, les ticks ne doivent PAS monter.
+  ticksL = 0;
+  ticksR = 0;
+  Serial.println("[diag] encodeurs a l'arret (2s)");
+  unsigned long t0 = millis();
+  while (millis() - t0 < 2000)
+  {
+    static unsigned long last = 0;
+    if (millis() - last >= 200)
+    {
+      last = millis();
+      Serial.print("ticksL=");
+      Serial.print((long)ticksL);
+      Serial.print(" ticksR=");
+      Serial.println((long)ticksR);
+    }
+    delay(5);
+  }
 }
 
 
@@ -41,121 +81,40 @@ void loop()
   }
 
   // -----------------------------------
-  // --------- Carré sans gyro ---------
-  // -----------------------------------
-  // delay(2000);
-  // robot_rotate(120, 140);
-  // delay(2000);
-  // robot_move_distance(1000, 140);
-  // delay(2000);
-  // robot_rotate(120, 140);
-  // delay(2000);
-  // robot_move_distance(1000, 140);
-  // delay(2000);
-  // robot_rotate(120, 140);
-  // delay(2000);
-  // robot_move_distance(1000, 140);
-  // delay(2000);
-  // robot_rotate(120, 140);
-  // robot_stop();
-  
-
-  // -----------------------------------
-  // --------- Carré avec gyro ---------
+  // --------- Séquence (sans gyro) -----
   // -----------------------------------
 
-  // robot_move_distance(1255, 140);
-  // delay(2000);
-  // robot_rotate_gyro(90, 150);
-  // delay(2000);
-
-  // robot_move_distance(1255, 140);
-  // delay(2000);
-  // robot_rotate_gyro(90, 150);
-  // delay(2000);
-
-  // robot_move_distance(1255, 140);
-  // delay(2000);
-  // robot_rotate_gyro(90, 150);
-  // delay(2000);
-
-  // robot_move_distance(1255, 140);
-  // delay(2000);
-  // robot_rotate_gyro(90, 150);
-  // delay(2000);
-
-  // robot_stop();
-
-
-
-  // -----------------------------------
-  // --------- Séquence de test ---------
-  // -----------------------------------
-
-  // robot_move_distance(1255, 140);
-  // delay(2000);
- 
-  // bras_deployer();
-  // delay(2000);
-
-  // robot_rotate_gyro(180, 160);
-  // delay(2000);
-
-  // robot_move_distance(1250, 140);
-  // delay(2000);
-
-  // bras_retracter();
-  // delay(2000);
-
-  // robot_stop();
-
-
-  // -----------------------------------
-  // --------- Séquence de test 2 ---------
-  // -----------------------------------
-
-  robot_move_distance(160, 70);
-  robot_pauseable_delay(500);
-  robot_rotate_gyro(90, 150);
-  robot_pauseable_delay(500);
-  robot_move_distance(320, 80);
-  robot_pauseable_delay(1000);
-  robot_rotate_gyro(180, 150);
-  robot_pauseable_delay(1000);
-  robot_move_distance(280, 70);
-  robot_pauseable_delay(500);
-  robot_rotate_gyro(90, 150);
-  robot_pauseable_delay(1000);
-  robot_move_distance(340, 70);
-  robot_pauseable_delay(500);
-  robot_rotate_gyro(90, 150);
-  robot_pauseable_delay(500);
-  robot_move_distance(360, 70);
-  // robot_rotate_gyro(90, 150);
-  // delay(500);
-  // robot_move_distance(380, 70);
-  // delay(500);
-  // robot_rotate_gyro(-90, 150);
-  // delay(500);
-  // robot_move_distance(1000, 70);
-
-
-
- 
-  // delay(2000);
-
-  // robot_move_distance(-200, 140);
-  // delay(2000);
-
-  // robot_rotate_gyro(-180, 160);
-  // delay(2000);
-
-  // robot_move_distance(800, 140);
-  // delay(2000);
-
-  // bras_retracter();
-  // delay(2000);
-
+  if (g_team == Team::A)
+  {
+    Serial.println("=== Sequence equipe A ===");
+    robot_move_distance(160, 70);
+    robot_pauseable_delay(500);
+    robot_pauseable_delay(500);
+    robot_move_distance(320, 80);
+    robot_pauseable_delay(1000);
+    robot_pauseable_delay(1000);
+    robot_move_distance(270, 70);
+    robot_pauseable_delay(500);
+    robot_pauseable_delay(1000);
+    robot_move_distance(280, 70);
+    robot_pauseable_delay(500);
+  }
+  else
+  {
+    Serial.println("=== Sequence equipe B ===");
+    // Variante legere pour valider que le switch est bien pris en compte.
+    robot_move_distance(200, 70);
+    robot_pauseable_delay(500);
+    robot_pauseable_delay(500);
+    robot_move_distance(300, 80);
+    robot_pauseable_delay(1000);
+    robot_pauseable_delay(1000);
+    robot_move_distance(250, 70);
+    robot_pauseable_delay(500);
+    robot_pauseable_delay(1000);
+    robot_move_distance(260, 70);
+    robot_pauseable_delay(500);
+  }
   robot_stop();
 
 
