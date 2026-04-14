@@ -6,6 +6,7 @@
 #include "../lib/imu.h"
 #include "../lib/safety.h"
 #include "../lib/ultrasonic.h"
+#include "../lib/emergencyButton.h"
 
 #define DRIVE_PI_DEBUG 1
 
@@ -15,11 +16,79 @@ static bool robot_handleSafetyStop()
   if (!safety_isTriggered())
     return false;
 
+  // 1) Urgence: priorité, on ABORT l'action en cours.
+  if (safety_isEmergencyActive())
+  {
+    motors_stop();
+    Serial.println("[EMERGENCY] STOP");
+
+    while (safety_isEmergencyActive())
+    {
+      safety_update();
+      safety_clearIfSafe();
+      delay(20);
+    }
+    return true;
+  }
+
+  // 2) Obstacle ultrason: PAUSE + prints, puis reprise automatique (comme ton sketch).
+  if (safety_isObstacleActive())
+  {
+    static bool obstaclePresent = false;
+    motors_stop();
+
+    if (!obstaclePresent)
+    {
+      obstaclePresent = true;
+      Serial.println("\xF0\x9F\x9A\xA8 OBSTACLE DETECTE (2 capteurs) -> ARRET");
+    }
+
+    const int threshold = safety_getObstacleThresholdCm();
+    while (true)
+    {
+      // Pendant la pause obstacle: on ne fait qu'une mise à jour sécurité toutes les ~200ms.
+      // Comme safety_update() est throttlé, ça évite de repinger trop vite les ultrasons.
+      safety_update();
+
+      if (safety_isEmergencyActive())
+      {
+        motors_stop();
+        Serial.println("[EMERGENCY] STOP");
+        while (safety_isEmergencyActive())
+        {
+          safety_update();
+          delay(20);
+        }
+        return true;
+      }
+
+      int d1, d2;
+      safety_getLastDistancesCm(d1, d2);
+
+      bool obstacleEncore = safety_isObstacleActive();
+      (void)threshold; // threshold reste la ref, mais l'état obstacle est filtré côté safety.
+
+      // prints identiques au sketch
+      Serial.print("US1:");
+      Serial.print(d1);
+      Serial.print(" US2:");
+      Serial.println(d2);
+
+      if (!obstacleEncore)
+        break;
+
+      delay(200);
+    }
+
+    Serial.println("\xE2\x9C\x85 OBSTACLE DISPARU -> REPRISE");
+    obstaclePresent = false;
+    safety_clearIfSafe();
+    return false; // reprise
+  }
+
+  // Fallback
   motors_stop();
   Serial.println("[SAFETY] STOP");
-
-  // On attend que l'utilisateur relâche le bouton / que la situation redevienne safe.
-  // (utile pour tester sans reboot)
   while (safety_isTriggered())
   {
     safety_update();
@@ -45,8 +114,9 @@ void robot_init()
 {
   motors_init();
   encoders_init();
-  ultrasonic_init(13, 10); // trig, echo
-  safety_init(40, 50);     // 40cm seuil, sonar toutes les 50ms
+  ultrasonic_init(6, 7);   // US1: trig, echo
+  ultrasonic_init2(10, 11); // US2: trig, echo
+  safety_init(10, 50);     // comme ton sketch: obstacle <=10cm, sonar toutes les 50ms
 
   // IMU
   if (!imu_init())
