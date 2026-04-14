@@ -4,6 +4,7 @@
 #include "../lib/control.h"
 #include "../lib/robot.h"
 #include "../lib/teamSwitch.h"
+#include "../lib/startSwitch.h"
 
 static const uint8_t PIN_TIRETTE = 4;
 static const uint8_t PIN_TEAM_SWITCH = 5;
@@ -20,23 +21,14 @@ void setup()
   teamSwitch.begin();
   g_team = teamSwitch.readTeam();
   if (g_team == Team::B)
-    Serial.println("Equipe B selectionnee");
+    Serial.println("\xF0\x9F\x94\xB5 EQUIPE B SELECTIONNEE");
   else
-    Serial.println("Equipe A selectionnee");
+    Serial.println("\xF0\x9F\x94\xB4 EQUIPE A SELECTIONNEE");
 
-  pinMode(PIN_TIRETTE, INPUT_PULLUP);
-  Serial.println("En attente de la tirette...");
-
-  // Comme dans ton code qui marche: on attend que la broche passe a LOW.
-  // Avec INPUT_PULLUP, LOW = broche tiree vers GND (tirette retiree / contact ferme selon cablage).
-  while (digitalRead(PIN_TIRETTE) == LOW)
-  {
-    // Garde l'arrêt d'urgence actif même pendant l'attente.
-    robot_pauseable_delay(10);
-  }
-
-  Serial.println("Tirette detectee -> DEMARRAGE");
-  robot_pauseable_delay(300);
+  // Tirette: comportement identique à ton sketch.
+  StartSwitch tirette(PIN_TIRETTE);
+  tirette.begin();
+  tirette.waitForStart();
 
   // // Smoke test moteur (bypass encodeurs/regulation) : doit bouger comme ton sketch minimal.
   // Serial.println("[smoke] moteurs AVANT 1s");
