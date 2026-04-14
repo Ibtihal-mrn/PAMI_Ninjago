@@ -12,3 +12,8 @@ bool emergencyButton_isPressed()
 {
     return digitalRead(EBTN_PIN) == EMERGENCY_ACTIVE_LEVEL;
 }
+
+uint8_t emergencyButton_rawRead()
+{
+    return (uint8_t)digitalRead(EBTN_PIN);
+}

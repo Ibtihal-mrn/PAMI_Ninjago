@@ -19,8 +19,19 @@ void safety_init(int obstacle_cm, uint16_t sonar_period_ms) {
 
 void safety_update() {
   // bouton (rapide)
-  if (emergencyButton_isPressed()) {
-    g_triggered = true;
+  {
+    static bool lastPressed = false;
+    bool pressed = emergencyButton_isPressed();
+    if (pressed != lastPressed)
+    {
+      lastPressed = pressed;
+      Serial.print("[EMERGENCY] pressed=");
+      Serial.print(pressed ? "1" : "0");
+      Serial.print(" raw=");
+      Serial.println(emergencyButton_rawRead() ? "1" : "0");
+    }
+    if (pressed)
+      g_triggered = true;
   }
 
   // ultrason (lent → throttling)

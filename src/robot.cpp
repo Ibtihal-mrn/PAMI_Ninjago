@@ -9,6 +9,38 @@
 
 #define DRIVE_PI_DEBUG 1
 
+static bool robot_handleSafetyStop()
+{
+  safety_update();
+  if (!safety_isTriggered())
+    return false;
+
+  motors_stop();
+  Serial.println("[SAFETY] STOP");
+
+  // On attend que l'utilisateur relâche le bouton / que la situation redevienne safe.
+  // (utile pour tester sans reboot)
+  while (safety_isTriggered())
+  {
+    safety_update();
+    safety_clearIfSafe();
+    delay(20);
+  }
+  return true;
+}
+
+bool robot_pauseable_delay(uint16_t ms)
+{
+  unsigned long start = millis();
+  while ((unsigned long)(millis() - start) < (unsigned long)ms)
+  {
+    if (robot_handleSafetyStop())
+      return false;
+    delay(5);
+  }
+  return true;
+}
+
 void robot_init()
 {
   motors_init();
@@ -96,12 +128,8 @@ void robot_rotate(float angle_deg, int speed)
       continue;
     tPrev += (unsigned long)DT_MS * 1000UL;
 
-    safety_update();
-    if (safety_isTriggered())
-    {
-      motors_stop();
-      return; // arrêt immédiat
-    }
+    if (robot_handleSafetyStop())
+      return;
 
     long curL, curR;
     encoders_read(&curL, &curR);
@@ -119,6 +147,9 @@ void robot_rotate(float angle_deg, int speed)
 void robot_rotate_gyro(float target_deg, int pwmMax)
 {
   const uint16_t DT_MS = 10;
+
+  // Debug (0/1): affiche angle/err/rate périodiquement.
+  const bool DEBUG_GYRO = false;
 
   // Gains robustes pour petite plateforme
   const float KP = 2.0f;  // PWM / deg
@@ -146,12 +177,18 @@ void robot_rotate_gyro(float target_deg, int pwmMax)
 
   // Recalage court du bias avant chaque rotation pour stabiliser la repetabilite.
   motors_stop();
-  delay(120);
+  if (!robot_pauseable_delay(120))
+    return;
   (void)imu_calibrate(120, 2);
 
   float angle = 0.0f;
   float rateFilt = 0.0f;
   float prevErr = target_deg;
+
+  int gyroSign = 1;               // auto-correction si l'axe/signe est inversé
+  bool gyroSignLocked = false;
+  float signTowardSum = 0.0f;
+  uint16_t signSamples = 0;
 
   unsigned long tPrev = micros();
   unsigned long startMs = millis();
@@ -167,7 +204,23 @@ void robot_rotate_gyro(float target_deg, int pwmMax)
     float dt = (float)(now - tPrev) / 1000000.0f;
     tPrev = now;
 
-    float rateRaw = imu_readGyroZ_dps();
+    if (robot_handleSafetyStop())
+      return;
+
+    float rateRaw = 0.0f;
+    if (!imu_readGyroZ_dps_checked(rateRaw))
+    {
+      if (imu_getConsecutiveReadFailures() >= 15) // ~150ms
+      {
+        Serial.println("[ERR] IMU read fail (I2C) -> stop rotate_gyro");
+        break;
+      }
+      // on saute cette itération (évite d'intégrer du 0 arbitraire)
+      continue;
+    }
+
+    // Applique la correction de signe si nécessaire
+    rateRaw *= (float)gyroSign;
     rateFilt += RATE_FILT_ALPHA * (rateRaw - rateFilt);
     angle += rateFilt * dt;
 
@@ -182,6 +235,31 @@ void robot_rotate_gyro(float target_deg, int pwmMax)
 
     // Vitesse projetee dans le sens utile (+ = on se rapproche).
     float rateToward = rateFilt * (float)dir;
+
+    // Auto-détection du signe: au début, si on "s'éloigne" (rateToward fortement négatif), on inverse.
+    if (!gyroSignLocked)
+    {
+      if (pwmLimit >= min(80, pwmMax))
+      {
+        signTowardSum += rateToward;
+        signSamples++;
+      }
+
+      if (millis() - startMs >= 280 && signSamples >= 8)
+      {
+        float avgToward = signTowardSum / (float)signSamples;
+        // Si la rotation mesurée est globalement opposée au sens utile, on inverse.
+        if (avgToward < -8.0f)
+        {
+          gyroSign = -gyroSign;
+          angle = -angle;
+          rateFilt = -rateFilt;
+          prevErr = target_deg - angle;
+          Serial.println("[IMU] gyro sign auto-inverse");
+        }
+        gyroSignLocked = true;
+      }
+    }
     float u = KP * absErr - KD * rateToward;
 
     int pwm = (int)fabs(u);
@@ -234,9 +312,32 @@ void robot_rotate_gyro(float target_deg, int pwmMax)
 
     prevErr = err;
 
+    if (DEBUG_GYRO)
+    {
+      static unsigned long lastDbg = 0;
+      unsigned long nowMs = millis();
+      if (nowMs - lastDbg >= 120)
+      {
+        lastDbg = nowMs;
+        Serial.print("[gyro] angle=");
+        Serial.print(angle, 1);
+        Serial.print(" err=");
+        Serial.print(err, 1);
+        Serial.print(" rate=");
+        Serial.print(rateFilt, 1);
+        Serial.print(" pwmLim=");
+        Serial.println(pwmLimit);
+      }
+    }
+
     if (millis() - startMs > TIMEOUT_MS)
     {
-      Serial.println("[WARN] rotate_gyro timeout");
+      Serial.print("[WARN] rotate_gyro timeout angle=");
+      Serial.print(angle, 1);
+      Serial.print(" err=");
+      Serial.print(err, 1);
+      Serial.print(" rate=");
+      Serial.println(rateFilt, 1);
       break;
     }
   }
@@ -300,7 +401,8 @@ void robot_move_distance(float dist_mm, int pwmBaseTarget)
   // Important pour la répétabilité: s'assurer que le robot est immobile
   // avant de figer les ticks de départ (sinon 2 essais peuvent démarrer différemment).
   motors_stop();
-  delay(60);
+  if (!robot_pauseable_delay(60))
+    return;
 
   long startL, startR;
   encoders_read(&startL, &startR);
@@ -338,6 +440,9 @@ void robot_move_distance(float dist_mm, int pwmBaseTarget)
       continue;
     tPrev += (unsigned long)DT_MS * 1000UL;
 
+    if (robot_handleSafetyStop())
+      return;
+
     // safety_update();
     // if (safety_isTriggered()) {
     //   motors_stop();
@@ -363,6 +468,9 @@ void robot_move_distance(float dist_mm, int pwmBaseTarget)
     // Si on est en phase settle, on attend que le robot s'immobilise.
     if (settling)
     {
+      if (robot_handleSafetyStop())
+        return;
+
       if (labs(dL) <= SETTLE_D_TICKS_TOL && labs(dR) <= SETTLE_D_TICKS_TOL)
         settleGood++;
       else
