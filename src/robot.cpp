@@ -98,6 +98,48 @@ static bool robot_handleSafetyStop()
   return true;
 }
 
+static uint8_t applyInvert(bool invert, uint8_t dir)
+{
+  if (dir == FORWARD)
+    return invert ? BACKWARD : FORWARD;
+  if (dir == BACKWARD)
+    return invert ? FORWARD : BACKWARD;
+  return dir;
+}
+
+static void runLeft(uint8_t dir)
+{
+  motorL->run(applyInvert(invertLeft, dir));
+}
+
+static void runRight(uint8_t dir)
+{
+  motorR->run(applyInvert(invertRight, dir));
+}
+
+void motors_setSigned(int speedL, int speedR)
+{
+  int pwmL = constrain(abs(speedL), 0, 255);
+  int pwmR = constrain(abs(speedR), 0, 255);
+
+  motorL->setSpeed(pwmL);
+  motorR->setSpeed(pwmR);
+
+  if (speedL > 0)
+    runLeft(FORWARD);
+  else if (speedL < 0)
+    runLeft(BACKWARD);
+  else
+    motorL->run(RELEASE);
+
+  if (speedR > 0)
+    runRight(FORWARD);
+  else if (speedR < 0)
+    runRight(BACKWARD);
+  else
+    motorR->run(RELEASE);
+}
+
 bool robot_pauseable_delay(uint16_t ms)
 {
   unsigned long start = millis();
@@ -212,6 +254,50 @@ void robot_rotate(float angle_deg, int speed)
   }
 
   motors_stop();
+}
+
+void robot_move_timed(int pwmL, int pwmR, uint32_t ms)
+{
+  unsigned long startMs = millis();
+
+  while ((unsigned long)(millis() - startMs) < ms)
+  {
+    motors_setSigned(pwmL, pwmR);
+
+    safety_update();
+    if (safety_isTriggered())
+    {
+      motors_stop();
+
+      unsigned long blockedStart = millis();
+      while (safety_isTriggered())
+      {
+        safety_update();
+        safety_clearIfSafe();
+        delay(20);
+      }
+
+      // Le temps bloque par l'obstacle ne compte pas dans le mouvement utile.
+      startMs += (unsigned long)(millis() - blockedStart);
+    }
+
+    delay(5);
+  }
+
+  motors_stop();
+}
+
+void robot_move_timed_distance_cm(float dist_cm)
+{
+  // Calibration de référence: 63 cm à PWM 103/100 en 2000 ms.
+  const float REF_DIST_CM = 63.0f;
+  const uint32_t REF_TIME_MS = 2000UL;
+
+  uint32_t durationMs = (uint32_t)lround((dist_cm / REF_DIST_CM) * (float)REF_TIME_MS);
+  if (durationMs == 0 && dist_cm > 0.0f)
+    durationMs = 1;
+
+  robot_move_timed(103, 100, durationMs);
 }
 
 void robot_rotate_gyro(float target_deg, int pwmMax)

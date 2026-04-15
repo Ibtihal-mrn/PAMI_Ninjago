@@ -79,9 +79,9 @@ void loop()
   if (g_team == Team::A)
   {
     Serial.println("=== Sequence equipe A ===");
-    // robot_move_distance(120, 120);
-    // delay(500);
-    // robot_move_distance(120, 120);
+  
+    robot_move_timed_distance_cm(20);
+    robot_pauseable_delay(500);
     robot_rotate_gyro(90, 100);
     robot_pauseable_delay(500);
     // robot_pauseable_delay(500);
@@ -99,9 +99,9 @@ void loop()
   {
     Serial.println("=== Sequence equipe B ===");
     // Variante legere pour valider que le switch est bien pris en compte.
-    robot_move_distance(20,70);
+    robot_move_timed_distance_cm(20);
     robot_pauseable_delay(500);
-    robot_rotate_gyro(-90, 100);
+    robot_rotate_gyro(-90,70);
     robot_pauseable_delay(500);
     // robot_pauseable_delay(500);
     // robot_pauseable_delay(500);
