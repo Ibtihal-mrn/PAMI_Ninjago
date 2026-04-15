@@ -6,7 +6,7 @@
 #include "../lib/teamSwitch.h"
 #include "../lib/startSwitch.h"
 
-static const uint8_t PIN_TIRETTE = 4;
+// static const uint8_t PIN_TIRETTE = 4;
 static const uint8_t PIN_TEAM_SWITCH = 5;
 
 static Team g_team = Team::A;
@@ -26,9 +26,9 @@ void setup()
     Serial.println("\xF0\x9F\x94\xB4 EQUIPE A SELECTIONNEE");
 
   // Tirette: comportement identique à ton sketch.
-  StartSwitch tirette(PIN_TIRETTE);
-  tirette.begin();
-  tirette.waitForStart();
+  // StartSwitch tirette(PIN_TIRETTE);
+  // tirette.begin();
+  // tirette.waitForStart();
 
   // // Smoke test moteur (bypass encodeurs/regulation) : doit bouger comme ton sketch minimal.
   // Serial.println("[smoke] moteurs AVANT 1s");
@@ -79,43 +79,38 @@ void loop()
   if (g_team == Team::A)
   {
     Serial.println("=== Sequence equipe A ===");
-  
-    robot_move_timed_distance_cm(20);
+
+    robot_move_timed_distance_cm(35);
     robot_pauseable_delay(500);
-    robot_rotate_gyro(90, 100);
+    robot_rotate_gyro(-180, 70);
     robot_pauseable_delay(500);
-    // robot_pauseable_delay(500);
-    // robot_pauseable_delay(500);
-    // robot_move_distance(320, 80);
-    // robot_pauseable_delay(1000);
-    // robot_pauseable_delay(1000);
-    // robot_move_distance(270, 70);
-    // robot_pauseable_delay(500);
-    // robot_pauseable_delay(1000);
-    // robot_move_distance(280, 70);
-    // robot_pauseable_delay(500);
+    robot_move_timed_distance_cm(27);
+    robot_pauseable_delay(500);
+    robot_rotate_gyro(-90, 70);
+    robot_pauseable_delay(500);
+    robot_move_timed_distance_cm(8);
+    robot_pauseable_delay(500);
+    robot_rotate_gyro(-90, 70);
+    robot_pauseable_delay(500);
+    robot_move_timed_distance_cm(32);
+    robot_pauseable_delay(500);
+    robot_rotate_gyro(90, 70);
+    robot_pauseable_delay(500);
+    robot_move_timed_distance_cm(11);
+    robot_pauseable_delay(500);
+    robot_rotate_gyro(-90, 70);
+    robot_pauseable_delay(500);
+
   }
   else
   {
     Serial.println("=== Sequence equipe B ===");
     // Variante legere pour valider que le switch est bien pris en compte.
-    robot_move_timed_distance_cm(20);
+    robot_move_timed_distance_cm(35);
     robot_pauseable_delay(500);
     robot_rotate_gyro(-90,70);
     robot_pauseable_delay(500);
-    // robot_pauseable_delay(500);
-    // robot_pauseable_delay(500);
-    // robot_move_distance(200, 70);
-    // robot_pauseable_delay(500);
-    // robot_pauseable_delay(500);
-    // robot_move_distance(300, 80);
-    // robot_pauseable_delay(1000);
-    // robot_pauseable_delay(1000);
-    // robot_move_distance(250, 70);
-    // robot_pauseable_delay(500);
-    // robot_pauseable_delay(1000);
-    // robot_move_distance(260, 70);
-    // robot_pauseable_delay(500);
+
   }
   robot_stop();
 
